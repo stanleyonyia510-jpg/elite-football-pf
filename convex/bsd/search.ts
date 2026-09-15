@@ -6,7 +6,6 @@ import type { MatchSearchResult } from "./types.ts";
 
 export type { MatchSearchResult };
 
-// Searches upcoming/live/finished matches by team name and/or date window.
 export const searchMatches = action({
   args: {
     teamName: v.optional(v.string()),
@@ -25,16 +24,26 @@ export const searchMatches = action({
       limit: 30,
     })) as unknown as BsdEventListResponse;
 
-    return data.results.map((event) => ({
-      eventId: event.id,
-      homeTeam: event.home_team,
-      awayTeam: event.away_team,
-      // Try to find the league name in multiple possible fields
-      leagueName: (event as any).league_name ?? (event as any).league ?? (event as any).competition ?? "Unknown Competition",
-      kickoff: event.event_date,
-      status: event.status,
-      homeScore: event.home_score,
-      awayScore: event.away_score,
-    }));
+    return data.results.map((event: any) => {
+      // Try every possible name Bzzoiro might use for the league
+      const leagueName = 
+        event.league_name || 
+        event.league || 
+        event.competition || 
+        event.tournament || 
+        event.competition_name || 
+        "Unknown Competition";
+
+      return {
+        eventId: event.id,
+        homeTeam: event.home_team,
+        awayTeam: event.away_team,
+        leagueName: leagueName,
+        kickoff: event.event_date,
+        status: event.status,
+        homeScore: event.home_score,
+        awayScore: event.away_score,
+      };
+    });
   },
 });
